@@ -21,7 +21,7 @@
         "ext-json": "*",
         "ext-mongodb": "*",
         "symfony/messenger": "^5.0 || ^6.0 || ^7.0",
-        "mongodb/mongodb": "^1.12"
+        "mongodb/mongodb": "^2.1"
     },
     "require-dev": {
         "symfony/serializer": "^5.0 || ^6.0 || ^7.0",

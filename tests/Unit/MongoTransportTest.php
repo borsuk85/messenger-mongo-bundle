@@ -8,6 +8,7 @@ use EmagTechLabs\MessengerMongoBundle\MongoTransport;
 use EmagTechLabs\MessengerMongoBundle\Tests\Unit\Fixtures\HelloMessage;
 use MongoDB\BSON\ObjectId;
 use MongoDB\Collection;
+use MongoDB\Driver\CursorInterface;
 use MongoDB\InsertOneResult;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -128,11 +129,11 @@ class MongoTransportTest extends TestCase
 
         $collection = $this->createMock(Collection::class);
         $collection->method('find')
-            ->willReturn([
+            ->willReturn($this->createCursor([
                 $this->createDocument(),
                 $this->createDocument(),
                 $this->createDocument(),
-            ]);
+            ]));
 
         $transport = new MongoTransport(
             $collection,
@@ -289,5 +290,77 @@ class MongoTransportTest extends TestCase
     private function createSerializer(): SerializerInterface
     {
         return new Serializer();
+    }
+
+    /**
+     * Zwraca prosty kursor zgodny z MongoDB\Driver\CursorInterface,
+     * który iteruje po przekazanej tablicy dokumentów.
+     *
+     * @param array<int, array<string, mixed>> $documents
+     */
+    private function createCursor(array $documents): \MongoDB\Driver\CursorInterface
+    {
+        return new class($documents) implements \MongoDB\Driver\CursorInterface
+        {
+            private array $data;
+            private int $position = 0;
+
+            public function __construct(array $data)
+            {
+                $this->data = array_values($data);
+            }
+
+            // Iterator
+            public function current(): array|null|object
+            {
+                return $this->data[$this->position];
+            }
+
+            public function key(): int
+            {
+                return $this->position;
+            }
+
+            public function next(): void
+            {
+                $this->position++;
+            }
+
+            public function rewind(): void
+            {
+                $this->position = 0;
+            }
+
+            public function valid(): bool
+            {
+                return array_key_exists($this->position, $this->data);
+            }
+
+            // CursorInterface
+            public function toArray(): array
+            {
+                return $this->data;
+            }
+
+            public function isDead(): bool
+            {
+                return false;
+            }
+
+            public function setTypeMap(array $typemap): void
+            {
+                // NOP – niepotrzebne w testach
+            }
+
+            public function getId(): \MongoDB\BSON\Int64
+            {
+                throw new \RuntimeException('Not implemented in test cursor.');
+            }
+
+            public function getServer(): \MongoDB\Driver\Server
+            {
+                throw new \RuntimeException('Not implemented in test cursor.');
+            }
+        };
     }
 }

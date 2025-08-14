@@ -161,7 +161,7 @@ final class MongoTransport implements TransportInterface, ListableReceiverInterf
         return $envelope->with(new TransportMessageIdStamp($objectId));
     }
 
-    public function all(int $limit = null): iterable
+    public function all(int $limit = null): \Traversable
     {
         $documents = $this->collection->find([], ['limit' => $limit]);
 
